@@ -15,18 +15,11 @@ class Model:
         glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST)
         return pyglet.graphics.TextureGroup(tex)
 
-    def __init__(self):
+    def add_block(self,x,y,z):
 
-        self.top = self.get_tex('grass_top.png')
-        self.side = self.get_tex('grass_side.png')
-        self.bottom = self.get_tex('dirt.png')
-
-        self.batch = pyglet.graphics.Batch()
-
-        tex_coords = ('t2f', (0,0, 1,0, 1,1, 0,1))
-
-        x, y, z = 0, 0 ,-1
         X, Y, Z = x+1, y+1, z+1
+
+        tex_coords = ('t2f', (0, 0, 1, 0, 1, 1, 0, 1))
 
         self.batch.add(4, GL_QUADS, self.side,   ('v3f', (X, y, z,  x, y, z,  x, Y, z,  X, Y, z)), tex_coords) # back
         self.batch.add(4, GL_QUADS, self.side,   ('v3f', (x, y, Z,  X, y, Z,  X, Y, Z,  x, Y, Z)), tex_coords) # front
@@ -36,6 +29,18 @@ class Model:
 
         self.batch.add(4, GL_QUADS, self.bottom, ('v3f', (x, y, z,  X, y, z,  X, y, Z,  x, y, Z)), tex_coords)  # bottom
         self.batch.add(4, GL_QUADS, self.top,    ('v3f', (x, Y, Z,  X, Y, Z,  X, Y, z,  x, Y, z)), tex_coords)  # top
+
+    def __init__(self):
+
+        self.top = self.get_tex('grass_top.png')
+        self.side = self.get_tex('grass_side.png')
+        self.bottom = self.get_tex('dirt.png')
+
+        self.batch = pyglet.graphics.Batch()
+
+        self.add_block(0, 0, -1)
+        self.add_block(0, 2, -1)
+
 
     def draw(self):
         self.batch.draw()
@@ -56,21 +61,22 @@ class Player:
             self.rot[0] = -90
 
     def update(self,dt,keys):
+        sens = 0.1
         s = dt*10
         rotY = -self.rot[1]/180*math.pi
         dx, dz = s*math.sin(rotY), math.cos(rotY)
         if keys[key.W]:
-            self.pos[0] += dx
-            self.pos[2] -= dz
+            self.pos[0] += dx*sens
+            self.pos[2] -= dz*sens
         if keys[key.S]:
-            self.pos[0] -= dx
-            self.pos[2] += dz
+            self.pos[0] -= dx*sens
+            self.pos[2] += dz*sens
         if keys[key.A]:
-            self.pos[0] -= dz
-            self.pos[2] -= dx
+            self.pos[0] -= dz*sens
+            self.pos[2] -= dx*sens
         if keys[key.D]:
-            self.pos[0] += dz
-            self.pos[2] += dx
+            self.pos[0] += dz*sens
+            self.pos[2] += dx*sens
         if keys[key.SPACE]:
             self.pos[1] += s
         if keys[key.LSHIFT]:
