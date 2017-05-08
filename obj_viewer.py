@@ -18,10 +18,10 @@ import pyglet
 from pyglet.gl import gl
 from pyglet.gl import glu
 
-# TODO: Rotate scene
-# TODO: Camera lock onto model (change model with arrows)
 # TODO: Camera view entire scene
 # TODO: Camera adjust view to fit both objects (while locked to one)
+# TODO: add model + texture
+# TODO: add height line to ground
 
 # constants
 UPDATE_RATE = 100  # Hz
@@ -30,20 +30,23 @@ UPDATE_RATE = 100  # Hz
 black = (0, 0, 0, 1)
 dark_gray = (.75, .75, .75, 1)
 white = (1, 1, 1, 1)
-
+ground = (0.26, 0.47, 0.13, 1)
+sky = (0.5, 0.7, 1, 1)
 
 class World:
     """
     Collection of OBJ models within the larger simulation.
     """
 
-    def __init__(self, coords, models=None, background_color=black):
+    def __init__(self, coords, models=None, background_color=sky):
 
         # sets the background color
         gl.glClearColor(*background_color)
 
         [self.x, self.y, self.z] = coords
         self.rx = self.ry = self.rz = 0
+
+        self.cx, self.cy, self.cz = 0, 0, 0
 
         if models is None:
             self.models = []
@@ -70,10 +73,19 @@ class World:
         gl.glRotatef(self.rz, 0, 0, 1)
         # gl.glTranslatef(self.x, self.y, self.z)
 
+        self.ground_plane()
+
         for model in self.models:
             self._model_render(model)
 
 
+    def ground_plane(self):
+        size = 100
+        gl.glPushMatrix()
+        gl.glPolygonMode(gl.GL_FRONT_AND_BACK, gl.GL_FILL)
+        gl.glColor4f(*ground)
+        pyglet.graphics.draw(4, pyglet.gl.GL_QUADS, ('v3f', (-size, -self.cy, -size,  size, -self.cy, -size,  size, -self.cy, size,  -size, -self.cy, size)))
+        gl.glPopMatrix()
 
     def _model_render(self,model):
 
@@ -101,7 +113,7 @@ class World:
         gl.glColor4f(*model.color)
 
         # sets the position
-        gl.glTranslatef(model.x, model.y, model.z)
+        gl.glTranslatef(model.x - self.cx, model.y - self.cy, model.z - self.cz)
 
         # sets the rotation
         gl.glRotatef(model.rx, 1, 0, 0)
@@ -109,7 +121,7 @@ class World:
         gl.glRotatef(model.rz, 0, 0, 1)
 
         # sets the scale
-        gl.glScalef(model.scale,model.scale,model.scale)
+        gl.glScalef(model.scale, model.scale, model.scale)
 
         # draws the quads
         pyglet.graphics.draw_indexed(len(model.vertices) // 3, gl.GL_QUADS, model.quad_indices,
@@ -126,11 +138,12 @@ class World:
         for model in self.models:
             count += 1
             if count == 1:
-                model.rx += 10/UPDATE_RATE
+                model.rx += 10 / UPDATE_RATE
             elif count == 2:
                 model.ry += 10 / UPDATE_RATE
             else:
                 model.rz += 10 / UPDATE_RATE
+                model.y -= 0.1 / UPDATE_RATE
         # print(dt)
 
 
@@ -210,24 +223,24 @@ class Window(pyglet.window.Window):
             self.models.append(OBJModel((0, 0, 0), color=dark_gray, path=os.path.join('obj', name)))
 
         # # current model
-        # self.model_index = 0
+        self.model_index = 0
         # self.current_model = self.models[self.model_index]
 
         sphere1 = copy.deepcopy(self.models[0])
         sphere2 = copy.deepcopy(self.models[0])
         sphere3 = copy.deepcopy(self.models[0])
 
-        sphere1.x, sphere1.y, sphere1.z = [-1, 0, -3.5]
+        sphere1.x, sphere1.y, sphere1.z = [-1, 2, -3.5]
         sphere1.color = (1, 0, 0, 1)
         sphere1.scale = 0.5
-        sphere2.x, sphere2.y, sphere2.z = [1, 0, -3.5]
+        sphere2.x, sphere2.y, sphere2.z = [1, 2, -3.5]
         sphere2.color = (0, 0, 1, 1)
 
-        sphere3.x, sphere3.y, sphere3.z = [0, 0, 0]
+        sphere3.x, sphere3.y, sphere3.z = [2, 4, 2]
         sphere3.color = (1, 1, 0, 1)
         sphere3.scale = 0.1
 
-        self.world = World([0, 0, 0])
+        self.world = World([0, 0, -5])
         self.world.models.append(sphere1)
         self.world.models.append(sphere2)
         self.world.models.append(sphere3)
@@ -258,16 +271,12 @@ class Window(pyglet.window.Window):
         def on_key_press(symbol, modifiers):
             # press the LEFT or RIGHT key to change the current model
             if symbol == pyglet.window.key.RIGHT:
-                pass
-                # # next model
-                # self.model_index = (self.model_index + 1) % len(self.model_names)
-                # self.current_model = self.models[self.model_index]
+                # next model
+                self.model_index = (self.model_index + 1) % len(self.world.models)
 
             elif symbol == pyglet.window.key.LEFT:
-                pass
-                # # previous model
-                # self.model_index = (self.model_index - 1) % len(self.model_names)
-                # self.current_model = self.models[self.model_index]
+                # previous model
+                self.model_index = (self.model_index - 1) % len(self.world.models)
 
             elif symbol == pyglet.window.key.ESCAPE:
                 # exit
@@ -293,6 +302,9 @@ class Window(pyglet.window.Window):
         @self.event
         def update(dt):
             self.world.update(dt)
+            self.world.cx = self.world.models[self.model_index].x
+            self.world.cy = self.world.models[self.model_index].y
+            self.world.cz = self.world.models[self.model_index].z
 
         pyglet.clock.schedule_interval(update, 1/UPDATE_RATE)
 
