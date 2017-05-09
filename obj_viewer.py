@@ -18,10 +18,10 @@ import pyglet
 from pyglet.gl import gl
 from pyglet.gl import glu
 
-# TODO: Camera view entire scene
+# TODO: Camera view all objects in scene
 # TODO: Camera adjust view to fit both objects (while locked to one)
 # TODO: add model + texture
-# TODO: add height line to ground
+# TODO: add direction vector to model
 
 # constants
 UPDATE_RATE = 100  # Hz
@@ -31,6 +31,7 @@ black = (0, 0, 0, 1)
 dark_gray = (.75, .75, .75, 1)
 white = (1, 1, 1, 1)
 ground = (0.26, 0.47, 0.13, 1)
+ground_line = (0, 0, 0, 1)
 sky = (0.5, 0.7, 1, 1)
 
 class World:
@@ -67,19 +68,21 @@ class World:
         gl.glTranslatef(self.x, self.y, self.z)
 
         # sets the rotation
-        # gl.glTranslatef(-self.x, -self.y, -self.z)
         gl.glRotatef(self.rx, 1, 0, 0)
         gl.glRotatef(self.ry, 0, 1, 0)
         gl.glRotatef(self.rz, 0, 0, 1)
-        # gl.glTranslatef(self.x, self.y, self.z)
 
-        self.ground_plane()
+        self.draw_ground_plane()
 
         for model in self.models:
             self._model_render(model)
 
+    def draw_ground_line(self,model):
+        gl.glPolygonMode(gl.GL_FRONT_AND_BACK, gl.GL_LINE)
+        gl.glColor4f(*ground_line)
+        pyglet.graphics.draw(2, pyglet.gl.GL_LINES, ('v3f', (model.x - self.cx, model.y - self.cy, model.z - self.cz,  model.x - self.cx, -self.cy, model.z - self.cz)))
 
-    def ground_plane(self):
+    def draw_ground_plane(self):
         size = 100
         gl.glPushMatrix()
         gl.glPolygonMode(gl.GL_FRONT_AND_BACK, gl.GL_FILL)
@@ -132,6 +135,7 @@ class World:
                                      ('v3f', model.vertices))
 
         gl.glPopMatrix()
+        self.draw_ground_line(model)
 
     def update(self, dt):
         count = 0
