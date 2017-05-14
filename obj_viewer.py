@@ -22,8 +22,7 @@ from pyglet.gl import glu
 # TODO: Camera adjust view to fit both objects (while locked to one)
 # TODO: add model + texture
 # TODO: add direction vector to model
-# TODO: Set a texture to the ground plane (which will help with guessing height
-# TODO: place a light source in the scene (10m above the current object?)
+# TODO: prevent camera to go below ground plane
 
 # constants
 UPDATE_RATE = 100  # Hz
@@ -58,6 +57,7 @@ class World:
                 self.models = models
             else:
                 self.models = list(models)
+        self.tex = pyglet.image.load('grass_top.png').get_texture()
 
     def draw(self):
         # clears the screen with the background color
@@ -80,16 +80,39 @@ class World:
             self._model_render(model)
 
     def draw_ground_line(self,model):
-        gl.glPolygonMode(gl.GL_FRONT_AND_BACK, gl.GL_LINE)
+        gl.glPolygonMode(gl.GL_FRONT_AND_BACK, gl.GL_FILL)
         gl.glColor4f(*ground_line)
         pyglet.graphics.draw(2, pyglet.gl.GL_LINES, ('v3f', (model.x - self.cx, model.y - self.cy, model.z - self.cz,  model.x - self.cx, -self.cy, model.z - self.cz)))
 
     def draw_ground_plane(self):
         size = 100
         gl.glPushMatrix()
-        gl.glPolygonMode(gl.GL_FRONT_AND_BACK, gl.GL_FILL)
-        gl.glColor4f(*ground)
-        pyglet.graphics.draw(4, pyglet.gl.GL_QUADS, ('v3f', (-size, -self.cy, -size,  size, -self.cy, -size,  size, -self.cy, size,  -size, -self.cy, size)))
+        gl.glColor3f(1, 1, 1)
+        gl.glEnable(gl.GL_TEXTURE_2D)
+        gl.glBindTexture(gl.GL_TEXTURE_2D, self.tex.id)
+        gl.glTexParameterf(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_MAG_FILTER, gl.GL_NEAREST)
+        gl.glTexParameterf(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_MAG_FILTER, gl.GL_NEAREST)
+        pos = ('v3f', (-size, -self.cy, -size, size, -self.cy, -size, size, -self.cy, size, -size, -self.cy, size))
+        tex_coords = ('t2f', (0, 0, 1, 0, 1, 1, 0, 1))
+        vlist = pyglet.graphics.vertex_list(4, pos, tex_coords)
+        vlist.draw(gl.GL_QUADS)
+        # # gl.glPolygonMode(gl.GL_FRONT_AND_BACK, gl.GL_FILL)
+        # # # gl.glColor4f(*ground)
+        # # # self.batch.add(4, GL_QUADS, self.side, ('v3f', (X, y, z, x, y, z, x, Y, z, X, Y, z)), tex_coords)  # back
+        # # # pyglet.graphics.draw(4, pyglet.gl.GL_QUADS, ('v3f', (-size, -self.cy, -size, size, -self.cy, -size, size, -self.cy, size, -size, -self.cy, size)))
+        # #gl.glEnable(gl.GL_TEXTURE_2D)
+        # tex_coords = ('t2f', (0, 0, 1, 0, 1, 1, 0, 1))
+        # #glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST)
+        # pyglet.gl.glTexParameterf(pyglet.gl.GL_TEXTURE_2D, pyglet.gl.GL_TEXTURE_MAG_FILTER, pyglet.gl.GL_NEAREST)
+        # texture = pyglet.graphics.TextureGroup(tex)
+        # # print(texture)
+        # #
+        # # pyglet.graphics.draw(4, pyglet.gl.GL_QUADS, texture, ('v3f', (-size, -self.cy, -size,  size, -self.cy, -size,  size, -self.cy, size,  -size, -self.cy, size)), tex_coords)
+        # pos = ('v3f', (-size, -self.cy, -size,  size, -self.cy, -size,  size, -self.cy, size,  -size, -self.cy, size))
+        #
+        # pyglet.graphics.draw_indexed(1, gl.GL_QUADS, model.quad_indices,pos)
+
+        gl.glDisable(gl.GL_TEXTURE_2D)
         gl.glPopMatrix()
 
     def _model_render(self,model):
@@ -260,7 +283,7 @@ class Window(pyglet.window.Window):
             gl.glMatrixMode(gl.GL_PROJECTION)
             gl.glLoadIdentity()
             # gluPerspective(vfov, aspect, near_clipping, far_clipping)
-            glu.gluPerspective(60.0, width / height, 0.1, 100.0)
+            glu.gluPerspective(90.0, width / height, 0.1, 10000.0)
 
             # sets the model view
             gl.glMatrixMode(gl.GL_MODELVIEW)
@@ -291,7 +314,7 @@ class Window(pyglet.window.Window):
         @self.event
         def on_mouse_scroll(x, y, scroll_x, scroll_y):
             # scroll the MOUSE WHEEL to zoom
-            self.world.z += scroll_y / 10.0
+            self.world.z += scroll_y / 1.0
 
         @self.event
         def on_mouse_drag(x, y, dx, dy, button, modifiers):
