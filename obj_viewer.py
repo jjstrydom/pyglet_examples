@@ -22,6 +22,8 @@ from pyglet.gl import glu
 # TODO: Camera adjust view to fit both objects (while locked to one)
 # TODO: add model + texture
 # TODO: add direction vector to model
+# TODO: Set a texture to the ground plane (which will help with guessing height
+# TODO: place a light source in the scene (10m above the current object?)
 
 # constants
 UPDATE_RATE = 100  # Hz
