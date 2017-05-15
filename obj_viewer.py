@@ -7,6 +7,9 @@ Added:
     - solid wireframes
     - depth check on object drawing order
     - independent movement of scene and models - in progress
+    - groundplane & sky
+    - height lines
+    - texture on ground plane
 """
 
 
@@ -86,31 +89,18 @@ class World:
 
     def draw_ground_plane(self):
         size = 100
+
         gl.glPushMatrix()
-        gl.glColor3f(1, 1, 1)
+        gl.glColor3f(1, 1, 1) # no textures drawn without this for some reason
         gl.glEnable(gl.GL_TEXTURE_2D)
         gl.glBindTexture(gl.GL_TEXTURE_2D, self.tex.id)
-        gl.glTexParameterf(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_MAG_FILTER, gl.GL_NEAREST)
-        gl.glTexParameterf(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_MAG_FILTER, gl.GL_NEAREST)
+        gl.glTexParameterf(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_MAG_FILTER, gl.GL_NEAREST) # you need two
+        gl.glTexParameterf(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_MAG_FILTER, gl.GL_NEAREST) # I don't know why!
+
         pos = ('v3f', (-size, -self.cy, -size, size, -self.cy, -size, size, -self.cy, size, -size, -self.cy, size))
         tex_coords = ('t2f', (0, 0, 1, 0, 1, 1, 0, 1))
         vlist = pyglet.graphics.vertex_list(4, pos, tex_coords)
         vlist.draw(gl.GL_QUADS)
-        # # gl.glPolygonMode(gl.GL_FRONT_AND_BACK, gl.GL_FILL)
-        # # # gl.glColor4f(*ground)
-        # # # self.batch.add(4, GL_QUADS, self.side, ('v3f', (X, y, z, x, y, z, x, Y, z, X, Y, z)), tex_coords)  # back
-        # # # pyglet.graphics.draw(4, pyglet.gl.GL_QUADS, ('v3f', (-size, -self.cy, -size, size, -self.cy, -size, size, -self.cy, size, -size, -self.cy, size)))
-        # #gl.glEnable(gl.GL_TEXTURE_2D)
-        # tex_coords = ('t2f', (0, 0, 1, 0, 1, 1, 0, 1))
-        # #glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST)
-        # pyglet.gl.glTexParameterf(pyglet.gl.GL_TEXTURE_2D, pyglet.gl.GL_TEXTURE_MAG_FILTER, pyglet.gl.GL_NEAREST)
-        # texture = pyglet.graphics.TextureGroup(tex)
-        # # print(texture)
-        # #
-        # # pyglet.graphics.draw(4, pyglet.gl.GL_QUADS, texture, ('v3f', (-size, -self.cy, -size,  size, -self.cy, -size,  size, -self.cy, size,  -size, -self.cy, size)), tex_coords)
-        # pos = ('v3f', (-size, -self.cy, -size,  size, -self.cy, -size,  size, -self.cy, size,  -size, -self.cy, size))
-        #
-        # pyglet.graphics.draw_indexed(1, gl.GL_QUADS, model.quad_indices,pos)
 
         gl.glDisable(gl.GL_TEXTURE_2D)
         gl.glPopMatrix()
@@ -121,7 +111,6 @@ class World:
         gl.glPolygonMode(gl.GL_FRONT_AND_BACK, gl.GL_FILL)
 
         # draws the current model
-        #model.color = dark_gray
         self._model_draw(model)
 
         # sets wire-frame mode
